@@ -690,3 +690,63 @@ console.log("Reference Array after change:", referenceToArray); // Output: [ 1, 
 - Variable assignment for primitives copies the value.
 - Variable assignment for non-primitives copies the reference.
 */
+
+/*
+--- Pass by Value vs. Pass by Reference (Conceptual) ---
+
+How values are passed to functions in JavaScript depends on whether the value is a primitive or non-primitive.
+This is often discussed in terms of "Pass by Value" and "Pass by Reference", although JavaScript's handling of non-primitives is technically "Pass by Sharing".
+
+1.  **Pass by Value (for Primitive Datatypes):**
+    -   When you pass a primitive value (string, number, boolean, null, undefined, symbol, bigint) to a function, a *copy* of the actual value is passed.
+    -   The function works with this copied value. If the function changes the parameter's value, it only changes the copy within the function's local scope.
+    -   The original variable outside the function remains unchanged.
+    -   This is consistent with the immutability of primitive types.
+
+    Example (same as Problem 8, but with detailed explanation):
+    */
+   function changePrimitive(value) {
+     console.log("Inside function (before change) - value:", value); // value is a copy
+     value = 200; // Changes only the local copy of 'value' inside the function
+     console.log("Inside function (after change) - value:", value); // Output: 200
+   }
+
+   let originalNum = 100;
+   console.log("Outside function (before call) - originalNum:", originalNum); // Output: 100
+
+   changePrimitive(originalNum); // Passing the value 100 (a copy is made)
+
+   console.log("Outside function (after call) - originalNum:", originalNum); // Output: 100 (Original remains unchanged)
+   /*
+
+2.  **Pass by Reference for Objects/Arrays (Pass by Sharing):**
+    -   When you pass a non-primitive value (object, array, function) to a function, a *copy of the reference* (memory address) to the object/array in the heap is passed.
+    -   The function receives this copied reference, which points to the *same* object/array in memory as the original variable.
+    -   If the function modifies the *contents* of the object/array using this reference (e.g., changing a property, adding an element to an array), the changes will affect the original object/array because both the original variable and the function parameter are pointing to the same location in memory.
+    -   However, if the function *reassigns* the parameter to a *new* object or array, this only changes the local copy of the reference inside the function. The original variable still points to the initial object/array.
+    -   This behavior is a consequence of how non-primitive types are stored and referenced.
+
+    Example (same as Problem 8, but with detailed explanation):
+    */
+   function changeObject(obj) {
+     console.log("Inside function (before change) - obj:", obj); // obj is a copy of the reference
+     obj.value = 200; // Modifies the object in memory that the reference points to
+     console.log("Inside function (after content change) - obj:", obj); // Output: { value: 200 }
+
+     // Reassigning the parameter to a NEW object
+     obj = { newValue: 300 }; // Changes only the local reference inside the function
+     console.log("Inside function (after reassignment) - obj:", obj); // Output: { newValue: 300 }
+   }
+
+   let originalObj = { value: 100 };
+   console.log("Outside function (before call) - originalObj:", originalObj); // Output: { value: 100 }
+
+   changeObject(originalObj); // Passing a copy of the reference to originalObj
+
+   console.log("Outside function (after call) - originalObj:", originalObj); // Output: { value: 200 } (The original object was modified)
+   /*
+
+--- Summary ---
+-   Primitives are **Passed by Value**: A copy of the value is passed. Changes inside the function do not affect the original variable.
+-   Non-Primitives (Objects/Arrays) are **Passed by Sharing/Reference**: A copy of the reference is passed. Changes to the object's *contents* inside the function *do* affect the original object. Reassigning the parameter inside the function *does not* affect the original variable.
+*/
