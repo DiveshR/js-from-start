@@ -280,6 +280,112 @@ Variables and their values are stored in memory differently based on their datat
 */
 
 /*
+--- JavaScript Execution Context and Variables ---
+
+How Variables Work in the Browser (Conceptual Explanation for Diagram):
+
+When JavaScript code runs in a browser, it operates within an **Execution Context**.
+Think of an execution context as the environment where JavaScript code is evaluated and executed.
+There are two main types of execution contexts:
+
+1.  **Global Execution Context (GEC):** The default context where code starts executing. For browsers, this is typically the `window` object.
+2.  **Function Execution Context (FEC):** Created whenever a function is called.
+
+The JavaScript engine uses a **Call Stack** to manage these execution contexts. The GEC is at the bottom of the stack. When a function is called, a new FEC is created and pushed onto the stack. When the function finishes, its FEC is popped off the stack.
+
+Each Execution Context has several components, but the most relevant for variables are:
+
+-   **Variable Environment:** Holds variables declared with `var` and function declarations.
+-   **Lexical Environment:** Introduced in ES6, this holds variables declared with `let`, `const`, and function declarations. It also has a reference to the outer (parent) lexical environment, forming a scope chain.
+
+The creation and execution of an execution context happen in two phases:
+
+**Phase 1: Creation Phase**
+
+When the JavaScript engine encounters an execution context (either the GEC when the script starts, or an FEC when a function is called), it performs the following steps:
+
+a.  **Creation of the Variable/Lexical Environment:** The environment is set up.
+b.  **Hoisting:** The engine scans the code for variable and function declarations:
+    -   For `var` declarations: The variable name is added to the **Variable Environment** and initialized with the value `undefined`. This is why you can access `var` variables before declaration, but their value is `undefined`.
+
+        *Diagram Concept:* In the Variable Environment box, you'd see `variableName: undefined` for all `var`s declared in that context.
+
+    -   For `let` and `const` declarations: The variable name is added to the **Lexical Environment**, but they are **not initialized**. They are in a **Temporal Dead Zone (TDZ)**. Accessing them before the declaration line results in a `ReferenceError`.
+
+        *Diagram Concept:* In the Lexical Environment box, you'd see `variableName: <uninitialized>` or similar, perhaps with a note about the TDZ, for all `let`s and `const`s.
+
+    -   For function declarations (`function myFunction() {}`): The function name is added to the **Variable Environment (and Lexical Environment)** and is fully stored in memory, allowing you to call function declarations before their definition in the code.
+
+        *Diagram Concept:* In the Variable Environment/Lexical Environment, you'd see `myFunction: <function code>`. The actual function code is also stored in memory, and the environment holds a reference to it.
+
+    -   Function expressions (`var myFunction = function() {}`) behave like `var` variables; only the variable `myFunction` is hoisted and initialized to `undefined` in the Variable Environment.
+
+c.  **Setting up the Scope Chain:** The Lexical Environment gets a reference to its outer lexical environment, linking it up the chain to the global environment. This chain is how the engine looks for variables when they are not found in the current scope.
+
+    *Diagram Concept:* Draw arrows from the current Lexical Environment box pointing to the outer Lexical Environment box, and so on, up to the Global Lexical Environment.
+
+**Phase 2: Execution Phase**
+
+After the creation phase, the engine executes the code line by line:
+
+a.  **Variable Assignments:** When a line with a variable assignment is reached (e.g., `variableName = value;`),
+    -   For `var`: The variable in the **Variable Environment** is updated with the assigned value.
+    -   For `let` and `const`: The variable in the **Lexical Environment** moves out of the TDZ and is initialized/assigned the value. For `const`, this is the only assignment allowed.
+
+    *Diagram Concept:* In the Variable/Lexical Environment box, update `undefined` or `<uninitialized>` to the actual value.
+
+b.  **Code Execution:** Other lines of code, like function calls, `console.log`, etc., are executed.
+
+**Diagramming the Execution Context and Variables:**
+
+For a simple script or function call, you could draw boxes representing the Call Stack. Inside the topmost box (the current Execution Context), draw two sub-boxes for the Variable Environment and Lexical Environment. List the variables (`var`, `let`, `const`, function names) inside the appropriate environment box, showing their state (`undefined`, `<uninitialized>`, or assigned value) during both the Creation and Execution phases. Draw arrows to represent the scope chain from the Lexical Environment.
+
+**Example Visualization:**
+
+Consider this code:
+
+```javascript
+var a = 10;
+let b = 20;
+const c = 30;
+
+function showVars() {
+  var x = 100;
+  let y = 200;
+  console.log(a, b, c, x, y);
+}
+
+showVars();
+```
+
+*   **Global Execution Context (Creation Phase):**
+    *   Call Stack: [GEC]
+    *   Global Environment:
+        *   Variable Environment: `a: undefined`, `showVars: <function code>`
+        *   Lexical Environment: `b: <uninitialized>`, `c: <uninitialized>`, `showVars: <function code>`
+
+*   **Global Execution Context (Execution Phase):**
+    *   Line `var a = 10;`: Variable Environment: `a: 10`
+    *   Line `let b = 20;`: Lexical Environment: `b: 20` (exits TDZ)
+    *   Line `const c = 30;`: Lexical Environment: `c: 30` (exits TDZ)
+    *   Line `showVars();`: A new FEC is created and pushed onto the stack.
+
+*   **Function Execution Context for `showVars` (Creation Phase):**
+    *   Call Stack: [GEC, FEC_showVars]
+    *   Function Environment (for `showVars`):
+        *   Variable Environment: `x: undefined`
+        *   Lexical Environment: `y: <uninitialized>`, Outer Environment: Global Lexical Environment
+
+*   **Function Execution Context for `showVars` (Execution Phase):**
+    *   Line `var x = 100;`: Variable Environment: `x: 100`
+    *   Line `let y = 200;`: Lexical Environment: `y: 200` (exits TDZ)
+    *   Line `console.log(...)`: Engine looks for `a`, `b`, `c` up the scope chain in the Global Lexical Environment.
+    *   Function finishes: FEC_showVars is popped off the stack.
+
+This detailed breakdown of the phases and environments should provide a strong basis for visualizing or drawing the execution context and how variables are managed within it.
+*/
+
+/*
 --- JavaScript Variables, Datatypes, and Scope: Interview Problems ---
 
 These problems cover various aspects of variables, datatypes, scope, hoisting, and memory management.
@@ -488,3 +594,99 @@ console.log("P10 {} + []:"); // Your prediction:
 
 // Your explanation for Problem 10:
 //
+
+/*
+Mutability and Immutability:
+
+Mutability refers to whether the value of a data type can be changed after it is created.
+- Mutable: Can be changed after creation.
+- Immutable: Cannot be changed after creation. Any operation that seems to modify an immutable value actually creates a new value.
+
+This is a key distinction, especially when passing values around or assigning variables.
+*/
+
+// --- Immutable Datatypes (Primitives) ---
+/*
+All primitive datatypes are immutable:
+- string
+- number
+- boolean
+- null
+- undefined
+- symbol
+- bigint
+
+When you perform an operation that seems to change a primitive value, a *new* value is created.
+The original value remains unchanged.
+*/
+
+// Example with string:
+let originalString = "Hello";
+let modifiedString = originalString.toUpperCase(); // toUpperCase() returns a NEW string
+
+console.log("Original String:", originalString); // Output: Hello (original is unchanged)
+console.log("Modified String:", modifiedString); // Output: HELLO (new string created)
+
+// Example with number:
+let originalNumber = 10;
+let modifiedNumber = originalNumber + 5; // Addition creates a NEW number
+
+console.log("Original Number:", originalNumber); // Output: 10 (original is unchanged)
+console.log("Modified Number:", modifiedNumber); // Output: 15 (new number created)
+
+// Example with boolean:
+let isTrue = true;
+// There aren't direct methods to change a boolean value, but reassignment shows immutability
+isTrue = false; // Reassigning the variable, not changing the original 'true' value
+console.log("Boolean after reassignment:", isTrue); // Output: false
+
+
+// --- Mutable Datatypes (Non-Primitives/References) ---
+/*
+Non-primitive datatypes are mutable:
+- object
+- array
+- function (though usually treated functionally, their properties can be modified)
+
+When you modify a mutable value, you are changing the *contents* of the data structure
+that the variable is referencing in memory.
+If multiple variables reference the same mutable object/array, changing it through one
+variable will be reflected when accessed through the other.
+*/
+
+// Example with object:
+let originalObject = { value: 10 };
+let referenceToObject = originalObject; // Both variables reference the SAME object
+
+console.log("Original Object before change:", originalObject); // Output: { value: 10 }
+console.log("Reference Object before change:", referenceToObject); // Output: { value: 10 }
+
+referenceToObject.value = 20; // Modifying the object through the reference
+
+console.log("Original Object after change:", originalObject); // Output: { value: 20 } (It changed!)
+console.log("Reference Object after change:", referenceToObject); // Output: { value: 20 }
+
+// If you reassign the reference variable, it points to a NEW object, the original remains.
+referenceToObject = { newValue: 30 };
+console.log("Original Object after reference reassignment:", originalObject); // Output: { value: 20 } (Unchanged)
+console.log("Reference Object after reference reassignment:", referenceToObject); // Output: { newValue: 30 } (Points to new object)
+
+// Example with array:
+let originalArray = [1, 2, 3];
+let referenceToArray = originalArray; // Both variables reference the SAME array
+
+console.log("Original Array before change:", originalArray); // Output: [ 1, 2, 3 ]
+console.log("Reference Array before change:", referenceToArray); // Output: [ 1, 2, 3 ]
+
+referenceToArray.push(4); // Modifying the array through the reference
+
+console.log("Original Array after change:", originalArray); // Output: [ 1, 2, 3, 4 ] (It changed!)
+console.log("Reference Array after change:", referenceToArray); // Output: [ 1, 2, 3, 4 ]
+
+// --- Summary ---
+/*
+- Primitive datatypes are immutable. Operations create new values.
+- Non-primitive datatypes (Objects, Arrays, Functions) are mutable. Operations change the contents in place.
+- Variable assignment for primitives copies the value.
+- Variable assignment for non-primitives copies the reference.
+*/
